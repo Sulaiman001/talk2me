@@ -128,8 +128,6 @@ class Chat implements MessageComponentInterface {
                 } else {
                     $rooms_id = $r[0]['rooms_id'];
                 }
-                trigger_error("testing");
-                throw new Exception("die");
                 $response['messages'] = $this->db->query("select * from messages where rooms_id=" 
                         . $this->db->esc($rooms_id) . " order by messages_id desc limit " 
                         . $this->moreMessagesLimit);
