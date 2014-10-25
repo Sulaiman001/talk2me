@@ -28,10 +28,18 @@
                                 placeholder="Choose name"
                                 title="Name must be 1-16 of the following characters 0-9a-zA-Z-_." />
                     </div>
-                    <input type="checkbox" id="usekey" name="usekey" class="btn-tooltip" value="yes" 
-                            title="Anyone with the secret key can read and send encrypted messages. 
-                            You must use this form to enter the key - direct URL access 
-                            disabled." /> <label for="usekey">Enable client-side encryption</label>
+                    <div class="form-group">
+                        <div class="persistent-wrapper">
+                            <input type="checkbox" id="persistent" name="persistent" class="btn-tooltip" value="yes" 
+                                    title="All messages in this room are persistent." /> <label 
+                                    for="persistent">Create or join a persistent room.</label>
+                            <br />
+                        </div>
+                        <input type="checkbox" id="usekey" name="usekey" class="btn-tooltip" value="yes" 
+                                title="Anyone with the secret key can read and send encrypted messages. 
+                                You must use this form to enter the key - direct URL access 
+                                disabled." /> <label for="usekey">Enable client-side encryption</label>
+                    </div>
                     <div id="keyform" class="block-hidden">
                         <div class="form-group">
                             <input type="password" id="secret" name="secret" 
@@ -84,6 +92,8 @@
             <span class="timestamp">{{timestamp}}</span>
         </script>
 
+        <br /><br /><br />
+
         <script src="cdn/js/jquery/1.10.2/jquery-1.10.2.min.js"></script>
         <script src="cdn/js/jquery.jgrowl.min.js"></script>
         <script src="cdn/js/bootstrap/3.0.0/js/bootstrap.min.js"></script>
@@ -93,6 +103,6 @@
         <script src="cdn/js/config.js"></script>
         <script src="cdn/js/tinycon.min.js"></script>
         <script src="cdn/js/wwiki.min.js"></script>
-        <script src="cdn/js/talk2me.min.js"></script>
+        <script src="cdn/js/talk2me.js"></script>
     </body>
 </html>

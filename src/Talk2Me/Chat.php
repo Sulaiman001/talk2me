@@ -13,8 +13,13 @@ class Chat implements MessageComponentInterface {
     private $rooms;
     private $roomUsers;
     private $users;
+    private $db;
+    private $moreMessagesLimit = 20;
+    private $allowPersistentRooms = false;
 
-    public function __construct() {
+    public function __construct($db, $allowPersistentRooms) {
+        $this->allowPersistentRooms = $allowPersistentRooms;
+        $this->db = $db;
         $this->clients = new \SplObjectStorage;
         $this->users = array();
         foreach ($this->users as $k=>$v) {
@@ -45,6 +50,24 @@ class Chat implements MessageComponentInterface {
 
             return;
 
+        } else if ($this->allowPersistentRooms && $json->a === "moreMessages") {
+
+            if ($json->persistent) {
+                $r = $this->db->query("select * from rooms where name='" 
+                        . $this->db->esc($this->getRoom($from)) . "'");
+                $rooms_id = $r[0]['rooms_id'];
+
+                $json->a = "showMoreMessages";
+                $json->messages = $this->db->query("select * from messages where rooms_id=" 
+                        . $this->db->esc($rooms_id) . " order by messages_id desc limit " . $this->moreMessagesLimit
+                        . $json->messagesShown . " offset " . $this->db->esc($json->offset));
+                $json->moreMessagesLimit = $this->moreMessagesLimit;
+
+                $from->send(json_encode($json));
+            }
+
+            return;
+
         } else if ($json->a === "who") {
 
             // Returns who is online
@@ -69,7 +92,19 @@ class Chat implements MessageComponentInterface {
 
             $json->msg = "@" . $this->getUsername($from) . " is typing";
             $this->handleMessage($from, $json, "typing");
+
+            return;
             
+        } else if ($this->allowPersistentRooms && $json->a === "persistMessage") {
+
+            $r = $this->db->query("select * from rooms where name='" 
+                    . $this->db->esc($json->room) . "'");
+            $rooms_id = $r[0]['rooms_id'];
+            $this->db->query("insert into messages (rooms_id, message) values (" 
+                    . $this->db->esc($rooms_id) . ", '" . $this->db->esc($json->msg) . "')");
+
+            return;
+
         }
     }
 
@@ -84,6 +119,20 @@ class Chat implements MessageComponentInterface {
             $this->setUsers($from, $json->username);
 
             $response = array("status"=>"ok", "a"=>"login", "isLoggedIn"=>false);
+            if ($this->allowPersistentRooms && $json->persistent) {
+                $r = $this->db->query("select * from rooms where name='" 
+                        . $this->db->esc($json->room) . "'");
+                if (count($r) === 0) {
+                    $rooms_id = $this->db->query("insert into rooms (name) values ('" 
+                            . $this->db->esc($json->room) . "')");
+                } else {
+                    $rooms_id = $r[0]['rooms_id'];
+                }
+                $response['messages'] = $this->db->query("select * from messages where rooms_id=" 
+                        . $this->db->esc($rooms_id) . " order by messages_id desc limit " 
+                        . $this->moreMessagesLimit);
+                $response['moreMessagesLimit'] = $this->moreMessagesLimit;
+            }
             $from->send(json_encode($response));
 
             $this->setRoom($from, $json->room);
@@ -135,6 +184,13 @@ class Chat implements MessageComponentInterface {
                 $json->from = $fromUsername;
                 $client->send(json_encode($json));
             }
+        }
+
+        // This sends the message back for persistence.
+        if ($this->allowPersistentRooms && $json->persistent) {
+            $json->a = "persistMessage";
+            $json->room = $this->getRoom($from);
+            $this->onMessage($from, json_encode($json));
         }
     }
 

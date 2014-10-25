@@ -34,7 +34,25 @@ Copy `www/cdn/js/example.config.js` to `www/cdn/js/config.js` and update the `we
 
 Open `www/index.html` in a browser, login, and begin chatting.
 
-*Note:* wss may or may not work - still working on secure connections. The only way to ensure a secure connection is to enable client-side encryption. _Please message me if you can help._
+Persistent Chat Rooms
+=====================
+
+Althought this was never in the original plans for talk2me it is quite handy. Persistent chat rooms are not enabled by default and you are never required when entering any room. If you click the checkbox on the login page to create or join a persistent chat room all of your messages will be logged. If you do not check the box none of your messages will be logged. You can tell a user is logging there messages when an exclamation mark is appended to their username. e.g. `@foobar!`
+
+To enable persistent chat rooms you must create a MySQL database, import `sql/create-schema.sql` and edit these configuration files. Make sure both set `allowPersistentRooms` to `true`.
+
+`bin/example.config.php`
+
+    $mysqlServer = "127.0.0.1";
+    $mysqlPort = "3306";
+    $mysqlUsername = "root";
+    $mysqlPassword = "pass";
+    $mysqlDatabase = "talk2me";
+    $allowPersistentRooms = true;
+
+`www/cdn/js/example.config.js`
+
+    var allowPersistentRooms = true;
 
 Setup Stunnel for SSL encryption for secure web sockets
 ========================================================

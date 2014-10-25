@@ -3,6 +3,7 @@
     var threshold = 2000;
     var lastTyping = parseInt(new Date().getTime()) - threshold;
     var usekey = false;
+    var persistent = false;
     var secret = "";
     var connected = false;
     var reConnecting = false;
@@ -13,6 +14,8 @@
     var windowFocused = true;
     var messageCount = 0;
     var conn = null;
+    var messagesShown = 0;
+    var persistentURLBit = "!";
 
     function random(min, max) {
         "use strict";
@@ -78,7 +81,7 @@
             msg = encryptMessage(msg);
         }
 
-        var request = {"a": "message", "msg": msg};
+        var request = {"a": "message", "msg": msg, "persistent": persistent};
         conn.send(JSON.stringify(request));
         appendMessage(orgMsg);
         scrollToTop();
@@ -193,6 +196,8 @@
                 if (!windowFocused && jsonObj.t === "message") {
                     Tinycon.setBubble(++messageCount);
                 }
+            } else if (jsonObj.a === "showMoreMessages") {
+                showMoreMessages(jsonObj);
             } else if (jsonObj.a === "login") {
                 if (jsonObj.isLoggedIn) {
                     removeErrorMessages();
@@ -207,6 +212,25 @@
                     var context = {room: room, username: username}
                     var html = template(context);
                     $("#login-form").replaceWith(html);
+                    if (persistent) {
+                        $(".messages").before("<div class=\"more-messages-alert container\">"
+                                + "Messages will persist in this room.</div>");
+                        $.each(jsonObj.messages, function(k, v) {
+                            if (usekey) {
+                                v.message = decryptMessage(v.message);
+                            }
+
+                            $(".messages").append("<div class=\"well well-sm message\">" 
+                                    + Wwiki.render(v.message) + "</div>");
+                        });
+                        var s = $(jsonObj.messages).size();
+                        messagesShown = s;
+                        if (s > 0 && s === jsonObj.moreMessagesLimit) {
+                            $(".messages").append("<div class=\"more-messages\"><button type=\"button\" "
+                                    + "class=\"btn btn-default\" id=\"show-more-messages\">More</button>");
+                            applyShowMoreEvent();
+                        }
+                    }
                     $("#message").focus();
                     $("#message").keypress(function (e) {
                         if (e.which == 13) {
@@ -285,7 +309,12 @@
                 secret = "";
             }
 
-            window.location.hash = room + "@" + username;
+            if ($("#persistent").is(":checked")) {
+                persistent = true;
+                window.location.hash = room + "@" + username + persistentURLBit;
+            } else {
+                window.location.hash = room + "@" + username;
+            }
 
             $(".header").hide();
 
@@ -392,7 +421,7 @@
     function loginToRoom(room, username) {
         "use strict";
         try {
-            var request = {"a": "login", "room": room, "username": username};
+            var request = {"a": "login", "room": room, "username": username, "persistent": persistent};
             conn.send(JSON.stringify(request));
         } catch (ex) {
         }
@@ -464,6 +493,8 @@
             }
             init();
             setTimeout(reConnect, 2000);
+            $(".more-messages").remove();
+            $(".messages").children().remove();
         }
     }
 
@@ -494,10 +525,19 @@
         username = "";
         var hash = window.location.hash;
         if (hash.match(/#/) && hash.match(/@/)) {
-            room = hash.replace(/^#(.*)@(.*)$/, "$1");
-            $("#room").val(room);
-            username = hash.replace(/^#(.*)@(.*)$/, "$2");
-            $("#username").val(username);
+            if (hash.match(/!/)) {
+                $("#persistent").prop("checked", true);
+                room = hash.replace(/^#(.*)@.*/, "$1");
+                $("#room").val(room);
+                username = hash.replace(/^#.*@(.*)!$/, "$1");
+                $("#username").val(username);
+            } else {
+                persistent = false;
+                room = hash.replace(/^#(.*)@.*/, "$1");
+                $("#room").val(room);
+                username = hash.replace(/^#.*@(.*)$/, "$1");
+                $("#username").val(username);
+            }
             login();
         }
     }
@@ -553,9 +593,46 @@
         }
     }
 
+    function getMoreMessages() {
+        $(".more-messages").remove();
+        var request = {"a": "moreMessages", "persistent": persistent, "offset": messagesShown};
+        conn.send(JSON.stringify(request));
+    }
+
+    function showMoreMessages(jsonObj) {
+        "use strict";
+        if (persistent) {
+            $.each(jsonObj.messages, function(k, v) {
+                if (usekey) {
+                    v.message = decryptMessage(v.message);
+                }
+
+                $(".messages").append("<div class=\"well well-sm message\">" 
+                        + Wwiki.render(v.message) + "</div>");
+            });
+            var s = $(jsonObj.messages).size();
+            messagesShown += s;
+            if (s > 0 && s === jsonObj.moreMessagesLimit) {
+                $(".messages").append("<div class=\"more-messages\"><button type=\"button\" "
+                        + "class=\"btn btn-default\" id=\"show-more-messages\">More</button>");
+                applyShowMoreEvent();
+            }
+        }
+    }
+
+    function applyShowMoreEvent() {
+        $("#show-more-messages").on("click", function() {
+            getMoreMessages();
+        });
+    }
+
     $(document).ready(function() {
 
         init();
+
+        if (!allowPersistentRooms) {
+            $(".persistent-wrapper").remove();
+        }
 
         $(".btn-tooltip").tooltip();
 
