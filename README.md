@@ -26,9 +26,10 @@ Install composer dependencies.
 
     composer.phar install
 
-Run chat server.
+Run chat server. Edit the `bindir` variable to point to the `bin` directory in the file `bin/run.sh`. Then execute the `bin/run.sh` script.
 
-    php bin/chat-server.php
+    cd /path/to/talk2me
+    bin/run.sh
 
 Copy `www/cdn/js/example.config.js` to `www/cdn/js/config.js` and update the `webSocketUrl` and other parameters as desired.
 
