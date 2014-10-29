@@ -62,9 +62,11 @@
                 <!--<span style="font-weight:bold; color:green">Online</span>-->
                 <span id="users-online"></span>
             </div>
-            <form role="form"><input name="message" id="message" 
+            <!--<form role="form"><input name="message" id="message" 
                 type="text" class="form-control" 
-                placeholder="@{{username}}  #{{room}}" /></form>
+                placeholder="@{{username}}  #{{room}}" /></form>-->
+            <form role="form"><textarea rows="1" name="message" id="message" 
+                class="form-control" placeholder="@{{username}}  #{{room}}"></textarea></form>
             <div class="btn-group btn-status pull-left btn-tooltiop"><button 
                 type="button" class="btn btn-default btn-sm dropdown-toggle" 
                 title="Set your current status - automatically sets to Idle"
@@ -102,7 +104,7 @@
         <script src="cdn/js/asmcrypto.js"></script>
         <script src="cdn/js/config.js"></script>
         <script src="cdn/js/tinycon.min.js"></script>
-        <script src="cdn/js/wwiki.min.js"></script>
+        <script src="cdn/js/wwiki.js"></script>
         <script src="cdn/js/talk2me.js"></script>
     </body>
 </html>

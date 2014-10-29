@@ -9,9 +9,14 @@
             return str;
         }
 
+        str = str.replace(/(\r|\n)/g, "abcdnewlineqwer");
+        console.log("str: " + str);
+
         for (var i=0; i<fs; i++) {
             str = str.replace(from[i], to[i]);
         }
+
+        str = str.replace(/abcdnewlineqwer/g, "\n");
 
         return str;
     };
@@ -33,6 +38,7 @@
         /{quote}\s*(.+?)\s*{\/quote}/,
         /{site}\s*(.+?)\s*{\/site}/,
         /{banner}\s*(.+?)\s*{\/banner}/,
+        /{code}\s*(.+?)\s*{\/code}/,
         /{br}/
         ];
 
@@ -53,6 +59,7 @@
         "<blockquote>$1</blockquote>",
         "<iframe sandbox=\"allow-forms allow-scripts\" seamless=\"seamless\" src=\"$1\" style=\"width:100%; height:256px;\"></iframe>",
         "<div class=\"banner\">$1</div>",
+        "<pre class=\"code\">$1</pre>",
         "<br />"
         ];
 
