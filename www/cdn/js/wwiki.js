@@ -10,7 +10,8 @@
         }
 
         str = str.replace(/(\r|\n)/g, "abcdnewlineqwer");
-        console.log("str: " + str);
+        //str = str.replace(/(?<={code})(<*?)(?={\/code})/g, "&lt;");
+        //str = str.replace(/(?<={code})(>*?)(?={\/code})/g, "&gt;");
 
         for (var i=0; i<fs; i++) {
             str = str.replace(from[i], to[i]);

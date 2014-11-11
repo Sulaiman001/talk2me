@@ -46,6 +46,18 @@
         return this.replace(/\s +$/, ""); 
     }
 
+    function htmlspecialchars(text) {
+        var map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
     function getTimestamp() {
         "use strict";
         var d = new Date(); 
@@ -70,11 +82,9 @@
             return;
         }
 
-        msg = "<span class=\"room-user-message\">@" + username + "</span> " + msg 
+        msg = "<span class=\"room-user-message\">@" + username + "</span> " + htmlspecialchars(msg)
                 + " <span class=\"timestamp\">" + getTimestamp() + "</span>";
-        // These are the allowed HTML tags in messages.
-        msg = strip_tags(msg, "<strong><em><table><thead><tbody><tr><th><td>"
-                + "<img><br><br/><a><p><div><ul><li><ol><span><hr><hr/><dd><dl><dt>");
+        // strip_tags(msg, "<strong><em><table><thead><tbody><tr><th><td><img><br><br/><a><p><div><ul><li><ol><span><hr><hr/><dd><dl><dt>");
         var orgMsg = msg;
 
         if (usekey) {
@@ -235,9 +245,7 @@
                     $("#message").keypress(function (e) {
                         if (e.which == 13) {
                             e.preventDefault();
-                            sendMessage($("#message").val());
-                            $("#message").val('');
-                            $("#message").focus();
+                            sendMessageAction();
                             return false;
                         } else {
                             // This will only send a typing message at most every 'threshold' seconds.
@@ -249,6 +257,9 @@
                             }
                         }
                     });
+                    $("#send-message").on("click", function() {
+                        sendMessageAction();
+                    });
                     applyLogoutEvent();
                     applyWhoEvent();
                     applyClearMessagesEvent();
@@ -257,6 +268,12 @@
                 }
             }
         }
+    }
+
+    function sendMessageAction() {
+        sendMessage($("#message").val());
+        $("#message").val('');
+        $("#message").focus();
     }
 
     function sendTyping() {
@@ -633,6 +650,12 @@
         if (!allowPersistentRooms) {
             $(".persistent-wrapper").remove();
         }
+
+        $("pre").livequery(function() {
+            $("pre").each(function(i, e) {
+                hljs.highlightBlock(e)
+            });
+        });
 
         $(".btn-tooltip").tooltip();
 
