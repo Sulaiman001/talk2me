@@ -9,15 +9,17 @@
             return str;
         }
 
-        str = str.replace(/(\r|\n)/g, "abcdnewlineqwer");
-        //str = str.replace(/(?<={code})(<*?)(?={\/code})/g, "&lt;");
-        //str = str.replace(/(?<={code})(>*?)(?={\/code})/g, "&gt;");
+        if (str !== undefined) {
+            str = str.replace(/(\r|\n)/g, "abcdnewlineqwer");
+            //str = str.replace(/(?<={code})(<*?)(?={\/code})/g, "&lt;");
+            //str = str.replace(/(?<={code})(>*?)(?={\/code})/g, "&gt;");
 
-        for (var i=0; i<fs; i++) {
-            str = str.replace(from[i], to[i]);
+            for (var i=0; i<fs; i++) {
+                str = str.replace(from[i], to[i]);
+            }
+
+            str = str.replace(/abcdnewlineqwer/g, "\n");
         }
-
-        str = str.replace(/abcdnewlineqwer/g, "\n");
 
         return str;
     };

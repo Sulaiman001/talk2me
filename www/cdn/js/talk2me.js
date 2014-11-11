@@ -72,9 +72,13 @@
         if (msg.match(/^\s*(\/logout|\/exit|\/quit|\/q)\s*$/)) {
             logout();
             return;
-        } else if (msg.match(/^\s*\/room\s*[0-9a-zA-Z_\-\.]{1,16}\s*$/)) {
-            var room = msg.replace(/\/room\s*([0-9a-zA-Z_\-\.]{1,16})/, "$1");
-            window.location.hash = "#" + room + "@" + username;
+        } else if (msg.match(/^\s*\/room\s*[0-9a-zA-Z_\-\.]{1,16}!?\s*$/)) {
+            var room = msg.replace(/\/room\s*([0-9a-zA-Z_\-\.]{1,16})!?\s*/, "$1");
+            if (msg.match(/^\s*\/room\s*[0-9a-zA-Z_\-\.]{1,16}!\s*$/)) {
+                window.location.hash = "#" + room + "@" + username + "!";
+            } else {
+                window.location.hash = "#" + room + "@" + username;
+            }
             location.reload();
             return;
         } else if (msg.match(/^\s*(\/clear|\/refresh)\s*$/)) {
@@ -91,9 +95,14 @@
             msg = encryptMessage(msg);
         }
 
-        var request = {"a": "message", "msg": msg, "persistent": persistent};
-        conn.send(JSON.stringify(request));
-        appendMessage(orgMsg);
+        if (!msg) {
+            $.jGrowl("Message not sent - could not encrypt!", { life: 8000, group: "error-encryption" }); 
+        } else {
+            var request = {"a": "message", "msg": msg, "persistent": persistent};
+            conn.send(JSON.stringify(request));
+            appendMessage(orgMsg);
+        }
+
         scrollToTop();
     }
 
@@ -202,7 +211,9 @@
                     jsonObj.msg = decryptMessage(jsonObj.msg);
                 }
 
-                appendMessage(jsonObj.msg);
+                if (jsonObj.msg) {
+                    appendMessage(jsonObj.msg);
+                }
                 if (!windowFocused && jsonObj.t === "message") {
                     Tinycon.setBubble(++messageCount);
                 }
@@ -230,8 +241,10 @@
                                 v.message = decryptMessage(v.message);
                             }
 
-                            $(".messages").append("<div class=\"well well-sm message\">" 
-                                    + Wwiki.render(v.message) + "</div>");
+                            if (v.message) {
+                                $(".messages").append("<div class=\"well well-sm message\">" 
+                                        + Wwiki.render(v.message) + "</div>");
+                            }
                         });
                         var s = $(jsonObj.messages).size();
                         messagesShown = s;
@@ -598,6 +611,7 @@
             return ab2str(asmCrypto.AES_CBC.encrypt(msg, secret));
         } catch (ex) {
             console.log("Could not encrypt message.");
+            return false;
         }
     }
 
@@ -607,6 +621,7 @@
             return ab2str(asmCrypto.AES_CBC.decrypt(msg, secret));
         } catch (ex) {
             console.log("Could not decrypt message.");
+            return false;
         }
     }
 
