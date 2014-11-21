@@ -13,14 +13,24 @@ class Chat implements MessageComponentInterface {
     private $rooms;
     private $roomUsers;
     private $users;
+    private $mongo;
     private $db;
+    private $dbRooms;
+    private $dbMessages;
     private $moreMessagesLimit = 20;
     private $allowPersistentRooms = false;
+    private $cfg;
 
-    public function __construct($db, $allowPersistentRooms) {
-        $this->allowPersistentRooms = $allowPersistentRooms;
-        $this->db = $db;
+    public function __construct($cfg, $mongo) {
+        $this->allowPersistentRooms = $cfg['allowPersistentRooms'];
+        $this->mongo = $mongo;
+        if ($this->allowPersistentRooms) {
+            $this->db = $this->mongo->$cfg['mongoDatabase'];
+            $this->dbRooms = $this->db->rooms;
+            $this->dbMessages = $this->db->messages;
+        }
         $this->clients = new \SplObjectStorage;
+        $this->cfg = $cfg;
         $this->users = array();
         foreach ($this->users as $k=>$v) {
             unset($this->users[$k]);
@@ -53,16 +63,26 @@ class Chat implements MessageComponentInterface {
         } else if ($this->allowPersistentRooms && $json->a === "moreMessages") {
 
             if ($json->persistent) {
-                $r = $this->db->query("select * from rooms where name='" 
-                        . $this->db->esc($this->getRoom($from)) . "'");
-                $rooms_id = $r[0]['rooms_id'];
+                $r = $this->dbRooms->findOne(array("name" => $this->getRoom($from)));
+                if (!isset($r) || is_null($r) || count($r) < 1) {
+                    $roomData = array("name" => $json->room);
+                    $r = $this->dbRooms->insert($roomData);
+                    $rooms_id = $roomData['_id'];
+                } else {
+                    $rooms_id = $r['_id'];
+                }
 
                 $json->a = "showMoreMessages";
-                $json->messages = $this->db->query("select * from messages where rooms_id=" 
-                        . $this->db->esc($rooms_id) . " order by messages_id desc limit " . $this->moreMessagesLimit
-                        . $json->messagesShown . " offset " . $this->db->esc($json->offset));
+                $messagesData = array("rooms_id" => $rooms_id);
+                $mr = $this->dbMessages->find($messagesData)->sort(array("timestamp" => -1))
+                        ->skip($json->offset)->limit($this->moreMessagesLimit);
+                $messagesArray = array();
+                while ($mr->hasNext()) {
+                    $item = $mr->getNext();
+                    $messagesArray[]['message'] = $item['message'];
+                }
+                $json->messages = $messagesArray;
                 $json->moreMessagesLimit = $this->moreMessagesLimit;
-
                 $from->send(json_encode($json));
             }
 
@@ -97,11 +117,11 @@ class Chat implements MessageComponentInterface {
             
         } else if ($this->allowPersistentRooms && $json->a === "persistMessage") {
 
-            $r = $this->db->query("select * from rooms where name='" 
-                    . $this->db->esc($json->room) . "'");
-            $rooms_id = $r[0]['rooms_id'];
-            $this->db->query("insert into messages (rooms_id, message) values (" 
-                    . $this->db->esc($rooms_id) . ", '" . $this->db->esc($json->msg) . "')");
+            $r = $this->dbRooms->findOne(array("name" => $json->room));
+            $rooms_id = $r['_id'];
+
+            $messagesData = array("rooms_id" => $rooms_id, "message" => $json->msg, "timestamp" => date("U") . "-" . microtime());
+            $this->dbMessages->insert($messagesData);
 
             return;
 
@@ -120,17 +140,25 @@ class Chat implements MessageComponentInterface {
 
             $response = array("status"=>"ok", "a"=>"login", "isLoggedIn"=>false);
             if ($this->allowPersistentRooms && $json->persistent) {
-                $r = $this->db->query("select * from rooms where name='" 
-                        . $this->db->esc($json->room) . "'");
-                if (count($r) === 0) {
-                    $rooms_id = $this->db->query("insert into rooms (name) values ('" 
-                            . $this->db->esc($json->room) . "')");
+                $r = $this->dbRooms->findOne(array("name" => $json->room));
+                if (!isset($r) || is_null($r) || count($r) < 1) {
+                    $roomData = array("name" => $json->room);
+                    $r = $this->dbRooms->insert($roomData);
+                    $rooms_id = $roomData['_id'];
                 } else {
-                    $rooms_id = $r[0]['rooms_id'];
+                    $rooms_id = $r['_id'];
                 }
-                $response['messages'] = $this->db->query("select * from messages where rooms_id=" 
-                        . $this->db->esc($rooms_id) . " order by messages_id desc limit " 
-                        . $this->moreMessagesLimit);
+
+                $messagesData = array("rooms_id" => $rooms_id);
+                $mr = $this->dbMessages->find($messagesData)->sort(array("timestamp" => -1))
+                        ->limit($this->moreMessagesLimit);
+                $messagesArray = array();
+                while ($mr->hasNext()) {
+                    $item = $mr->getNext();
+                    $messagesArray[]['message'] = $item['message'];
+                }
+
+                $response['messages'] = $messagesArray;
                 $response['moreMessagesLimit'] = $this->moreMessagesLimit;
             }
             $from->send(json_encode($response));

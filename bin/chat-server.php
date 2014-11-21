@@ -7,16 +7,17 @@ use Talk2Me\Chat;
 require dirname(__DIR__) . '/vendor/autoload.php';
 require dirname(__DIR__) . '/bin/config.php';
 
-require_once("lib/Mysqldb.php");
-$db = new Mysqldb($mysqlServer, $mysqlPort, $mysqlUsername, $mysqlPassword, $mysqlDatabase);
+if ($cfg['allowPersistentRooms']) {
+    $mongo = new Mongo($cfg['mongoHost']);
+}
 
 $server = IoServer::factory(
     new HttpServer(
         new WsServer(
-            new Chat($db, $allowPersistentRooms)
+            new Chat($cfg, $mongo)
         )
     ),
-    $webSocketPort
+    $cfg['webSocketPort']
 );
 
 $server->run();

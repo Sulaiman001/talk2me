@@ -1,7 +1,7 @@
 talk2me
 =======
 
-talk2me is a WebSocket chat client and server written in JavaScript, HTML, CSS and PHP. The goal is to produce a simple, secure and anonymous chat client. The only data stored is your username and room in memory on the server and is destroyed on disconnect.
+talk2me is a WebSocket chat client and server written in JavaScript, HTML, CSS, PHP and MongoDB if persistent rooms are enabled. The goal is to produce a simple, secure and anonymous chat client. The only data stored is your username and room in memory on the server and is destroyed on disconnect.
 
 Users connecting to rooms can additionally supply a secret to encrypt messages. Members of the room must also know the secret to decrypt messages. This encryption is performed on the client-side using the asmcrypt.js library.
 
@@ -12,6 +12,7 @@ Features
 
 * Secure WebSockets for instant chat
 * Rooms with multiple users
+    * Persistent chat room messages stored in MongoDB.
 * Client-side encryption
 * Status. e.g. Free, Away, Busy, Idle, ...
 * Slash commands similar to IRC. Implement `CommandPlugin` for custom slash commands. e.g. /help
@@ -22,38 +23,50 @@ Features
 INSTALL
 =======
 
-Install composer dependencies.
+Install composer dependencies, or `update` if upgrading talk2me.
 
-    composer.phar install
+```bash
+composer.phar install
+```
 
 Run chat server. Edit the `bindir` variable to point to the `bin` directory in the file `bin/run.sh`. Then execute the `bin/run.sh` script.
 
-    cd /path/to/talk2me
-    bin/run.sh
+```bash
+cd /path/to/talk2me
+bin/run.sh
+```
 
-Copy `www/cdn/js/example.config.js` to `www/cdn/js/config.js` and update the `webSocketUrl` and other parameters as desired.
+Copy `bin/example.config.php` to `bin/config.php` and update the Ratchet server settings.
+
+Copy `www/cdn/js/example.config.js` to `www/cdn/js/config.js` and update the JavaScript settings.
 
 Open `www/index.html` in a browser, login, and begin chatting.
 
 Persistent Chat Rooms
 =====================
 
-Althought this was never in the original plans for talk2me it is quite handy. Persistent chat rooms are not enabled by default and you are never required when entering any room. If you click the checkbox on the login page to create or join a persistent chat room all of your messages will be logged. If you do not check the box none of your messages will be logged. You can tell a user is logging there messages when an exclamation mark is appended to their username. e.g. `@foobar!`
+Although this was never in the original plan for talk2me it is quite handy. Persistent chat rooms are not enabled by default and you are never required when entering any room. If you click the checkbox on the login page to create or join a persistent chat room all of your messages will be logged. If you do not check the box none of your messages will be logged. You can tell a user is logging there messages when an exclamation mark is appended to their username. e.g. `@foobar!`
 
-To enable persistent chat rooms you must create a MySQL database, import `sql/create-schema.sql` and edit these configuration files. Make sure both set `allowPersistentRooms` to `true`.
+To enable persistent chat rooms you must have MongoDB installed. You can find information here: [http://docs.mongodb.org/ecosystem/drivers/php/](http://docs.mongodb.org/ecosystem/drivers/php/)
 
-`bin/example.config.php`
+Enable persistent rooms in the server config.
 
-    $mysqlServer = "127.0.0.1";
-    $mysqlPort = "3306";
-    $mysqlUsername = "root";
-    $mysqlPassword = "pass";
-    $mysqlDatabase = "talk2me";
-    $allowPersistentRooms = true;
+`bin/config.php`
 
-`www/cdn/js/example.config.js`
+```php
+$cfg['allowPersistentRooms'] = true;
+// mongo host:port
+$cfg['mongoHost'] = "localhost:27017";
+$cfg['mongoDatabase'] = "talk2me";
+```
 
-    var allowPersistentRooms = true;
+Similarly you must enable persistent rooms in the JavaScript config file.
+
+`www/cdn/js/config.js`
+
+```javascript
+var allowPersistentRooms = true;
+```
 
 Setup Stunnel for SSL encryption for secure web sockets
 ========================================================
@@ -78,6 +91,10 @@ USAGE
 You can automatically login by appending a HASH to the URL. Enter any room name and username.
 
 e.g. https://www.example.com/talk2me/#room@username
+
+To enter a persistent room if enabled append an exclamation mark.
+
+e.g. https://www.example.com/talk2me/#room@username!
 
 Message Filtering (Wiki like syntax)
 ====================================

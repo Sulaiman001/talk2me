@@ -236,6 +236,7 @@
                     if (persistent) {
                         $(".messages").before("<div class=\"more-messages-alert container\">"
                                 + "Messages will persist in this room.</div>");
+                        // Display all messages from room when first logging into room.
                         $.each(jsonObj.messages, function(k, v) {
                             if (usekey) {
                                 v.message = decryptMessage(v.message);
