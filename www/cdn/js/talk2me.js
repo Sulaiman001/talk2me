@@ -126,13 +126,19 @@
         }
     }
 
-    function updateRoomMember(username, currentStatus) {
+    function updateRoomMember(username, currentStatus, encrypted) {
         "use strict";
+
+        var lockHTML = "";
+        if (encrypted) {
+            lockHTML = getUserLockHTML() + " ";
+        }
+
         var usernameHtml = "";
         if (currentStatus === "Free") {
-            usernameHtml = "@" + username;
+            usernameHtml = lockHTML + "@" + username;
         } else {
-            usernameHtml = "@" + username + ".<span class=\"user-status\">" + currentStatus + "</span>";
+            usernameHtml = lockHTML + "@" + username + ".<span class=\"user-status\">" + currentStatus + "</span>";
         }
                     
         var user = $(".room-user[data-username='" + username + "']");
@@ -144,17 +150,23 @@
         }
     }
 
-    function addRoomMember(username) {
+    function addRoomMember(username, encrypted) {
         "use strict";
+
+        var lockHTML = "";
+        if (encrypted) {
+            lockHTML = getUserLockHTML() + " ";
+        }
+
         var user = $(".room-user[data-username='" + username + "']");
         if (user.size() < 1) {
-            var userHtml = "<span class=\"room-user\" data-username=\"" + username + "\">@" + username + "</span>";
+            var userHtml = "<span class=\"room-user\" data-username=\"" + username + "\">" + lockHTML + "@" + username + "</span>";
             // This line moves the user to the front of the list as she is the most active.
             $("#users-online").prepend(userHtml);
         }
     }
 
-    function removeRoomMember(username) {
+    function removeRoomMember(username, encrypted) {
         "use strict";
         var user = $(".room-user[data-username='" + username + "']");
         if (user.size() > 0) {
@@ -173,49 +185,66 @@
         }
     }
 
+    function showMessage(encrypted, usekey) {
+        if (!encrypted || (usekey && encrypted)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     function handleMessage(json) {
         "use strict";
         if (isLoggedIn) {
             var jsonObj = JSON.parse(json);
             if (jsonObj.a === "message" && jsonObj.t === "typing") {
-                if ($(".from-" + jsonObj.from).size() < 1) {
-                    $.jGrowl(jsonObj.msg, { life: 3500, group: "from-" + jsonObj.from }); 
+                if (showMessage(jsonObj.encrypted, usekey)) {
+                    if ($(".from-" + jsonObj.from).size() < 1) {
+                        $.jGrowl(jsonObj.msg, { life: 3500, group: "from-" + jsonObj.from }); 
+                    }
                 }
             } else if (jsonObj.a === "message" && jsonObj.t === "status-message") {
-                // This is where we add, remove or update a person in room.
-                if (jsonObj['statusType'] === "disconnect") {
-                    removeRoomMember(jsonObj.username);
-                } else if (jsonObj['statusType'] === "join") {
-                    addRoomMember(jsonObj.username);
-                } else if (jsonObj['statusType'] === "statusChange") {
-                    updateRoomMember(jsonObj.username, jsonObj['currentStatus']);
-                }
+                if (showMessage(jsonObj.encrypted, usekey)) {
+                    // This is where we add, remove or update a person in room.
+                    if (jsonObj['statusType'] === "disconnect") {
+                        removeRoomMember(jsonObj.username, jsonObj.encrypted);
+                    } else if (jsonObj['statusType'] === "join") {
+                        addRoomMember(jsonObj.username, jsonObj.encrypted);
+                    } else if (jsonObj['statusType'] === "statusChange") {
+                        updateRoomMember(jsonObj.username, jsonObj['currentStatus'], jsonObj.encrypted);
+                    }
 
-                $.jGrowl(jsonObj.msg, { life: 1500, group: "from-status-" + jsonObj.from }); 
+                    $.jGrowl(jsonObj.msg, { life: 1500, group: "from-status-" + jsonObj.from }); 
+                }
             } else if (jsonObj.a === "message" && jsonObj.t === "who") {
                 updateRoomMembers(jsonObj.users);
             } else if (jsonObj.a === "message" && jsonObj.t === "message") {
-                // Remove Growls on message received.
-                if ($(".from-" + jsonObj.from).size() > 0) {
-                    lastTyping = parseInt(new Date().getTime()) - threshold;
-                    $(".from-" + jsonObj.from).remove();
-                }
-
-                // Only play sounds for these types of messages.
-                var notif = new Audio("cdn/sounds/" + notifMessage);
-                notif.volume = 0.5;
-                notif.play();
-
-                // Decrypt messages if using a key.
-                if (usekey) {
-                    jsonObj.msg = getLockHTML() + " " + decryptMessage(jsonObj.msg);
-                }
-
                 if (jsonObj.msg) {
-                    appendMessage(jsonObj.msg, jsonObj.encrypted);
-                }
-                if (!windowFocused && jsonObj.t === "message") {
-                    Tinycon.setBubble(++messageCount);
+                    // Decrypt messages if using a key.
+                    if (usekey && jsonObj.encrypted) {
+                        jsonObj.msg = decryptMessage(jsonObj.msg);
+                    }
+
+                    if (showMessage(jsonObj.encrypted, usekey)) {
+                        // Remove Growls on message received.
+                        if ($(".from-" + jsonObj.from).size() > 0) {
+                            lastTyping = parseInt(new Date().getTime()) - threshold;
+                            $(".from-" + jsonObj.from).remove();
+                        }
+
+                        // Only play sounds for these types of messages.
+                        var notif = new Audio("cdn/sounds/" + notifMessage);
+                        notif.volume = 0.5;
+                        notif.play();
+
+                        // Append message to page
+                        appendMessage(jsonObj.msg, jsonObj.encrypted);
+
+                        // Increment favicon
+                        if (!windowFocused && jsonObj.t === "message") {
+                            Tinycon.setBubble(++messageCount);
+                        }
+                    }
                 }
             } else if (jsonObj.a === "showMoreMessages") {
                 showMoreMessages(jsonObj);
@@ -235,11 +264,11 @@
                     $("#login-form").replaceWith(html);
                     if (persistent) {
                         $(".messages").before("<div class=\"more-messages-alert container\">"
-                                + "Messages will persist in this room.</div>");
+                                + "Persistent messages enabled</div>");
                         // Display all messages from room when first logging into room.
                         $.each(jsonObj.messages, function(k, v) {
-                            if (usekey) {
-                                v.item.message = getLockHTML() + " " + decryptMessage(v.item.message);
+                            if (v.item.encrypted) {
+                                v.item.message = getMessageLockHTML() + " " + decryptMessage(v.item.message);
                             }
 
                             if (v.item.message) {
@@ -292,18 +321,28 @@
 
     function sendTyping() {
         "use strict";
-        var request = {"a": "typing"};
+        var request = {"a": "typing", "encrypted": usekey};
         conn.send(JSON.stringify(request));
     }
 
-    function getLockHTML() {
+    /**
+     * This function should match that in Chat.php
+     */
+    function getMessageLockHTML() {
         return "<span class=\"glyphicon glyphicon-lock btn-tooltip\" title=\"This message is encrypted.\"></span>";
+    }
+
+    /**
+     * This function should match that in Chat.php
+     */
+    function getUserLockHTML() {
+        return "<span class=\"glyphicon glyphicon-lock btn-tooltip\" title=\"This users messages are encrypted.\"></span>";
     }
 
     function appendMessage(msg, encrypted) {
         "use strict";
         if (encrypted) {
-            msg = getLockHTML() + " " + msg;
+            msg = getMessageLockHTML() + " " + msg;
         }
         $(".messages").prepend("<div class=\"well well-sm message\">" + Wwiki.render(msg) + "</div>");
     }
@@ -381,7 +420,7 @@
         isLoggedIn = false;
         usekey = false;
         secret = "";
-        var request = {"a": "logout"};
+        var request = {"a": "logout", "encrypted": usekey};
         conn.send(JSON.stringify(request));
         window.location.href = window.location.protocol + "//" 
                 + window.location.hostname + window.location.pathname;
@@ -401,7 +440,7 @@
         "use strict";
         updateRoomMember(username, newStatus);
         $("#current-status").text(newStatus);
-        var request = {"a": "statusChange", "status": newStatus};
+        var request = {"a": "statusChange", "status": newStatus, "encrypted": usekey};
         conn.send(JSON.stringify(request));
     }
 
@@ -438,7 +477,7 @@
 
     function who() {
         "use strict";
-        var request = {"a": "who"};
+        var request = {"a": "who", "encrypted": usekey};
         conn.send(JSON.stringify(request));
         $("#message").focus();
         scrollToTop();
@@ -643,8 +682,8 @@
         "use strict";
         if (persistent) {
             $.each(jsonObj.messages, function(k, v) {
-                if (usekey) {
-                    v.item.message = getLockHTML() + " " + decryptMessage(v.item.message);
+                if (v.item.encrypted) {
+                    v.item.message = getMessageLockHTML() + " " + decryptMessage(v.item.message);
                 }
 
                 $(".messages").append("<div class=\"well well-sm message\">" 
@@ -680,7 +719,9 @@
             });
         });
 
-        $(".btn-tooltip").tooltip();
+        $(".btn-tooltip").livequery(function() {
+            $(".btn-tooltip").tooltip();
+        });
 
         $("#room").focus();
 

@@ -74,7 +74,7 @@ class Chat implements MessageComponentInterface {
 
                 $json->a = "showMoreMessages";
                 if ($json->encrypted) {
-                    $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                    $messagesData = array("rooms_id" => $rooms_id);
                 } else {
                     $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
                 }
@@ -145,6 +145,7 @@ class Chat implements MessageComponentInterface {
             return;
         } else {
             $this->setUsers($from, $json->username);
+            $this->setUserEncrypted($from, $json->encrypted);
 
             $response = array("status"=>"ok", "a"=>"login", "isLoggedIn"=>false);
             if ($this->allowPersistentRooms && $json->persistent) {
@@ -157,15 +158,9 @@ class Chat implements MessageComponentInterface {
                     $rooms_id = $r['_id'];
                 }
 
-                // TODO: If encrypted then leave off encrypted key in $messagesData.
-                //       Then in the JavaScript checked the encrypted value and decrypt
-                //       the appropriate messages. Anything that is encrypted put a
-                //       lock icon in the message. We'll have to also add the lock to
-                //       all incoming messages and the ones you send.
-                //
-                //       Also this code is duplicated. Refactor into a method.
+                // TODO: Also this code is duplicated. Refactor into a method.
                 if ($json->encrypted) {
-                    $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                    $messagesData = array("rooms_id" => $rooms_id);
                 } else {
                     $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
                 }
@@ -194,12 +189,15 @@ class Chat implements MessageComponentInterface {
             foreach ($this->clients as $client) {
                 if ($from !== $client 
                         // Ensure message is sent to the proper room.
-                        && $this->getRoom($from) === $this->getRoom($client)) {
+                        && $this->getRoom($from) === $this->getRoom($client)
+                        // This makes sure a non-encrypted person doesn't see an encrypted person
+                        // enter the room.
+                        && !(!$this->getUserEncrypted($client->resourceId) && $this->getUserEncrypted($from->resourceId))) {
                     $o = array("status"=>"ok", "a"=>"message", "t"=>"status-message", 
                             "statusType"=>"join", "username"=>$json->username,
                             "msg"=>"<span style=\"color:green;\">@" 
                             . $json->username . " joined</span> <span class=\"timestamp\">" 
-                            . date("Y-m-d H:i:s") . "</span>");
+                            . date("Y-m-d H:i:s") . "</span>", "encrypted" => $json->encrypted);
                     $client->send(json_encode($o));
                 }
             }
@@ -226,7 +224,10 @@ class Chat implements MessageComponentInterface {
             // Don't send message to the sender.
             if ($from !== $client 
                     // Ensure message is sent to the proper room.
-                    && $this->getRoom($from) === $this->getRoom($client)) {
+                    && $this->getRoom($from) === $this->getRoom($client)
+                    // This makes sure a non-encrypted person doesn't see an encrypted person
+                    // enter the room.
+                    && !(!$this->getUserEncrypted($client->resourceId) && $this->getUserEncrypted($from->resourceId))) {
                 $json->status = "ok";
                 $json->a = "message";
                 $json->t = $t;
@@ -250,13 +251,19 @@ class Chat implements MessageComponentInterface {
         if (isset($this->roomUsers[$room])) {
             foreach ($this->roomUsers[$room] as $username) {
                 $resourceId = array_search($username, $this->users);
-                $status = $this->rooms[$resourceId]['status'];
-                if ($status === "Free") {
-                    $currentMembers .= "@{$username}, ";
-                    $users[$username] = "@{$username}";
-                } else {
-                    $currentMembers .= "@{$username}.<span class=\"user-status\">{$status}</span>, ";
-                    $users[$username] .= "@{$username}.<span class=\"user-status\">{$status}</span>";
+                if (!($this->getUserEncrypted($resourceId) && !$this->getUserEncrypted($from->resourceId))) {
+                    $status = $this->rooms[$resourceId]['status'];
+                    $lockHTML = "";
+                    if ($this->getUserEncrypted($resourceId)) {
+                        $lockHTML = $this->getUserLockHTML() . " ";
+                    }
+                    if ($status === "Free") {
+                        $currentMembers .= "{$lockHTML}@{$username}, ";
+                        $users[$username] = "{$lockHTML}@{$username}";
+                    } else {
+                        $currentMembers .= "{$lockHTML}@{$username}.<span class=\"user-status\">{$status}</span>, ";
+                        $users[$username] .= "{$lockHTML}@{$username}.<span class=\"user-status\">{$status}</span>";
+                    }
                 }
             }
         }
@@ -271,9 +278,6 @@ class Chat implements MessageComponentInterface {
     public function logout($client) {
         $room = $this->getRoom($client);
         $username = $this->getUsername($client);
-        $this->removeFromUsers($username);
-        $this->unsetRoomUserClient($client);
-        $this->clients->detach($client);
 
         if (isset($room) && isset($username)) {
             foreach ($this->clients as $theClient) {
@@ -282,11 +286,18 @@ class Chat implements MessageComponentInterface {
                         "msg"=>"<span style=\"color:red;\">@" 
                         . $username . " disconnected</span> <span class=\"timestamp\">" 
                         . date("Y-m-d H:i:s") . "</span>");
-                if ($this->getRoom($theClient) === $room) {
+                if ($this->getRoom($theClient) === $room
+                        // This makes sure a non-encrypted person doesn't see an encrypted person
+                        // exit the room.
+                        && !(!$this->getUserEncrypted($theClient->resourceId) && $this->getUserEncrypted($client->resourceId))) {
                     $theClient->send(json_encode($o));
                 }
             }
         }
+
+        $this->removeFromUsers($username);
+        $this->unsetRoomUserClient($client);
+        $this->clients->detach($client);
     }
 
     public function onClose(ConnectionInterface $conn) {
@@ -304,6 +315,14 @@ class Chat implements MessageComponentInterface {
 
     public function setUserStatus($client, $status) {
         $this->rooms[$client->resourceId]['status'] = $status;
+    }
+
+    public function getUserEncrypted($resourceId) {
+        return $this->rooms[$resourceId]['encrypted'];
+    }
+
+    public function setUserEncrypted($client, $encrypted) {
+        $this->rooms[$client->resourceId]['encrypted'] = $encrypted;
     }
 
     public function getRoom($client) {
@@ -355,6 +374,13 @@ class Chat implements MessageComponentInterface {
         } else {
             return false;
         }
+    }
+
+    /**
+     * This function should match that in talk2me.js
+     */
+    public function getUserLockHTML() {
+        return "<span class=\"glyphicon glyphicon-lock btn-tooltip\" title=\"This users messages are encrypted.\"></span>";
     }
 
 }
