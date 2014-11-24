@@ -165,3 +165,7 @@ header {
     overflow:auto;
     max-height:480px;
 }
+
+.glyphicon-lock {
+    color:#c9b822;
+}

@@ -100,7 +100,7 @@
         } else {
             var request = {"a": "message", "msg": msg, "persistent": persistent, "encrypted": usekey};
             conn.send(JSON.stringify(request));
-            appendMessage(orgMsg);
+            appendMessage(orgMsg, usekey);
         }
 
         scrollToTop();
@@ -208,11 +208,11 @@
 
                 // Decrypt messages if using a key.
                 if (usekey) {
-                    jsonObj.msg = decryptMessage(jsonObj.msg);
+                    jsonObj.msg = getLockHTML() + " " + decryptMessage(jsonObj.msg);
                 }
 
                 if (jsonObj.msg) {
-                    appendMessage(jsonObj.msg);
+                    appendMessage(jsonObj.msg, jsonObj.encrypted);
                 }
                 if (!windowFocused && jsonObj.t === "message") {
                     Tinycon.setBubble(++messageCount);
@@ -239,12 +239,12 @@
                         // Display all messages from room when first logging into room.
                         $.each(jsonObj.messages, function(k, v) {
                             if (usekey) {
-                                v.message = decryptMessage(v.message);
+                                v.item.message = getLockHTML() + " " + decryptMessage(v.item.message);
                             }
 
-                            if (v.message) {
+                            if (v.item.message) {
                                 $(".messages").append("<div class=\"well well-sm message\">" 
-                                        + Wwiki.render(v.message) + "</div>");
+                                        + Wwiki.render(v.item.message) + "</div>");
                             }
                         });
                         var s = $(jsonObj.messages).size();
@@ -296,8 +296,15 @@
         conn.send(JSON.stringify(request));
     }
 
-    function appendMessage(msg) {
+    function getLockHTML() {
+        return "<span class=\"glyphicon glyphicon-lock btn-tooltip\" title=\"This message is encrypted.\"></span>";
+    }
+
+    function appendMessage(msg, encrypted) {
         "use strict";
+        if (encrypted) {
+            msg = getLockHTML() + " " + msg;
+        }
         $(".messages").prepend("<div class=\"well well-sm message\">" + Wwiki.render(msg) + "</div>");
     }
 
@@ -637,11 +644,11 @@
         if (persistent) {
             $.each(jsonObj.messages, function(k, v) {
                 if (usekey) {
-                    v.message = decryptMessage(v.message);
+                    v.item.message = getLockHTML() + " " + decryptMessage(v.item.message);
                 }
 
                 $(".messages").append("<div class=\"well well-sm message\">" 
-                        + Wwiki.render(v.message) + "</div>");
+                        + Wwiki.render(v.item.message) + "</div>");
             });
             var s = $(jsonObj.messages).size();
             messagesShown += s;

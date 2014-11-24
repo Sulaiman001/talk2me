@@ -73,14 +73,19 @@ class Chat implements MessageComponentInterface {
                 }
 
                 $json->a = "showMoreMessages";
-                $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                if ($json->encrypted) {
+                    $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                } else {
+                    $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                }
                 $sortData = array("timestamp" => -1);
                 $mr = $this->dbMessages->find($messagesData)->sort($sortData)
                         ->skip($json->offset)->limit($this->moreMessagesLimit);
                 $messagesArray = array();
                 while ($mr->hasNext()) {
                     $item = $mr->getNext();
-                    $messagesArray[]['message'] = $item['message'];
+                    $messagesArray[]['item'] = array("message" => $item['message'],
+                            "encrypted" => $item['encrypted']);
                 }
                 $json->messages = $messagesArray;
                 $json->moreMessagesLimit = $this->moreMessagesLimit;
@@ -152,14 +157,26 @@ class Chat implements MessageComponentInterface {
                     $rooms_id = $r['_id'];
                 }
 
-                $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                // TODO: If encrypted then leave off encrypted key in $messagesData.
+                //       Then in the JavaScript checked the encrypted value and decrypt
+                //       the appropriate messages. Anything that is encrypted put a
+                //       lock icon in the message. We'll have to also add the lock to
+                //       all incoming messages and the ones you send.
+                //
+                //       Also this code is duplicated. Refactor into a method.
+                if ($json->encrypted) {
+                    $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                } else {
+                    $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                }
                 $sortData = array("timestamp" => -1);
                 $mr = $this->dbMessages->find($messagesData)->sort($sortData)
                         ->limit($this->moreMessagesLimit);
                 $messagesArray = array();
                 while ($mr->hasNext()) {
                     $item = $mr->getNext();
-                    $messagesArray[]['message'] = $item['message'];
+                    $messagesArray[]['item'] = array("message" => $item['message'],
+                            "encrypted" => $item['encrypted']);
                 }
 
                 $response['messages'] = $messagesArray;
