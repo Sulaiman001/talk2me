@@ -98,7 +98,7 @@
         if (!msg) {
             $.jGrowl("Message not sent - could not encrypt!", { life: 8000, group: "error-encryption" }); 
         } else {
-            var request = {"a": "message", "msg": msg, "persistent": persistent};
+            var request = {"a": "message", "msg": msg, "persistent": persistent, "encrypted": usekey};
             conn.send(JSON.stringify(request));
             appendMessage(orgMsg);
         }
@@ -452,7 +452,7 @@
     function loginToRoom(room, username) {
         "use strict";
         try {
-            var request = {"a": "login", "room": room, "username": username, "persistent": persistent};
+            var request = {"a": "login", "room": room, "username": username, "persistent": persistent, "encrypted": usekey};
             conn.send(JSON.stringify(request));
         } catch (ex) {
         }
@@ -628,7 +628,7 @@
 
     function getMoreMessages() {
         $(".more-messages").remove();
-        var request = {"a": "moreMessages", "persistent": persistent, "offset": messagesShown};
+        var request = {"a": "moreMessages", "persistent": persistent, "offset": messagesShown, "encrypted": usekey};
         conn.send(JSON.stringify(request));
     }
 

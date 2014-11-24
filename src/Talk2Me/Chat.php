@@ -73,8 +73,9 @@ class Chat implements MessageComponentInterface {
                 }
 
                 $json->a = "showMoreMessages";
-                $messagesData = array("rooms_id" => $rooms_id);
-                $mr = $this->dbMessages->find($messagesData)->sort(array("timestamp" => -1))
+                $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                $sortData = array("timestamp" => -1);
+                $mr = $this->dbMessages->find($messagesData)->sort($sortData)
                         ->skip($json->offset)->limit($this->moreMessagesLimit);
                 $messagesArray = array();
                 while ($mr->hasNext()) {
@@ -120,7 +121,9 @@ class Chat implements MessageComponentInterface {
             $r = $this->dbRooms->findOne(array("name" => $json->room));
             $rooms_id = $r['_id'];
 
-            $messagesData = array("rooms_id" => $rooms_id, "message" => $json->msg, "timestamp" => date("U") . "-" . microtime());
+            $messagesData = array("rooms_id" => $rooms_id, "message" => $json->msg, 
+                    "timestamp" => date("U") . "-" . microtime(), 
+                    "encrypted" => $json->encrypted);
             $this->dbMessages->insert($messagesData);
 
             return;
@@ -149,8 +152,9 @@ class Chat implements MessageComponentInterface {
                     $rooms_id = $r['_id'];
                 }
 
-                $messagesData = array("rooms_id" => $rooms_id);
-                $mr = $this->dbMessages->find($messagesData)->sort(array("timestamp" => -1))
+                $messagesData = array("rooms_id" => $rooms_id, "encrypted" => $json->encrypted);
+                $sortData = array("timestamp" => -1);
+                $mr = $this->dbMessages->find($messagesData)->sort($sortData)
                         ->limit($this->moreMessagesLimit);
                 $messagesArray = array();
                 while ($mr->hasNext()) {

@@ -11,8 +11,6 @@
 
         if (str !== undefined) {
             str = str.replace(/(\r|\n)/g, "abcdnewlineqwer");
-            //str = str.replace(/(?<={code})(<*?)(?={\/code})/g, "&lt;");
-            //str = str.replace(/(?<={code})(>*?)(?={\/code})/g, "&gt;");
 
             for (var i=0; i<fs; i++) {
                 str = str.replace(from[i], to[i]);
@@ -25,24 +23,24 @@
     };
 
     var from = [
-        /{youtube}\s*http.+v=([a-zA-Z0-9_-]+?)\s*?{\/youtube}/, // embed youtube
-        /{{\s*(http.+?)\s*}}/, // image with css style set to 10%
-        /{\s*(http.+?)\s*\|\s*(http.+?)\s*}/, // image with alternate image link
-        /{\s*(http.+?)\s*}/, // image
-        /{img:\s*(.+?)\s*\|\s*(http.+?)\s*}/, // image with css style
-        /\[\s*(http.+?)\s*\|\s*(.+?)\s*\]/, // link with link text
-        /\[\s*?(http.+?)\s*?\]/, // link
-        /'''(.+?)'''/, // bold
-        /''(.+?)''/, // italics
-        /{-(.+?)-}/, // strikethrough
-        /@@(.+?)@@/, // code
-        /{span:\s*(.+?)\s*}\s*(.*?)\s*{\/span}/,
-        /{div:\s*(.+?)\s*}\s*(.*?)\s*{\/div}/,
-        /{quote}\s*(.+?)\s*{\/quote}/,
-        /{site}\s*(.+?)\s*{\/site}/,
-        /{banner}\s*(.+?)\s*{\/banner}/,
-        /{code}\s*(.+?)\s*{\/code}/,
-        /{br}/
+        /{youtube}\s*http.+v=([a-zA-Z0-9_-]+?)\s*?{\/youtube}/g, // embed youtube
+        /{{\s*(http.+?)\s*}}/g, // image with css style set to 10%
+        /{\s*(http.+?)\s*\|\s*(http.+?)\s*}/g, // image with alternate image link
+        /{\s*(http.+?)\s*}/g, // image
+        /{img:\s*(.+?)\s*\|\s*(http.+?)\s*}/g, // image with css style
+        /\[\s*(http.+?)\s*\|\s*(.+?)\s*\]/g, // link with link text
+        /\[\s*?(http.+?)\s*?\]/g, // link
+        /'''(.+?)'''/g, // bold
+        /''(.+?)''/g, // italics
+        /{-(.+?)-}/g, // strikethrough
+        /@@(.+?)@@/g, // code
+        /{span:\s*(.+?)\s*}\s*(.*?)\s*{\/span}/g,
+        /{div:\s*(.+?)\s*}\s*(.*?)\s*{\/div}/g,
+        /{quote}\s*(.+?)\s*{\/quote}/g,
+        /{site}\s*(.+?)\s*{\/site}/g,
+        /{banner}\s*(.+?)\s*{\/banner}/g,
+        /{code}\s*(.+?)\s*{\/code}/g,
+        /{br}/g
         ];
 
     var to = [
