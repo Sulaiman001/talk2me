@@ -438,7 +438,7 @@
 
     function sendChangeStatus(newStatus) {
         "use strict";
-        updateRoomMember(username, newStatus);
+        updateRoomMember(username, newStatus, usekey);
         $("#current-status").text(newStatus);
         var request = {"a": "statusChange", "status": newStatus, "encrypted": usekey};
         conn.send(JSON.stringify(request));
@@ -652,6 +652,15 @@
         return buf;
     }
 
+    function makeIV() {
+        var text = "";
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for (var i = 0; i < 16; i++) {
+            text += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return text;
+    }
+
     function encryptMessage(msg) {
         "use strict";
         try {
@@ -721,6 +730,10 @@
 
         $(".btn-tooltip").livequery(function() {
             $(".btn-tooltip").tooltip();
+        });
+
+        $(".btn-help").livequery(function() {
+            $(".btn-help").popover({ html: true, placement: "auto left" });
         });
 
         $("#room").focus();
