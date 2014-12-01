@@ -133,6 +133,11 @@ class Chat implements MessageComponentInterface {
 
             return;
 
+        } else if ($json->a === "search") {
+
+            $this->search($from, $json);
+
+            return;
         }
     }
 
@@ -298,6 +303,39 @@ class Chat implements MessageComponentInterface {
         $this->removeFromUsers($username);
         $this->unsetRoomUserClient($client);
         $this->clients->detach($client);
+    }
+
+    public function search($from, $json) {
+        print("Not implemented: Search for: {$json->q}\n");
+        /*
+        $response = array("status"=>"ok", "a"=>"searchResults");
+        if ($this->allowPersistentRooms && $json->persistent && !$json->encrypted) {
+            $r = $this->dbRooms->findOne(array("name" => $json->room));
+            if (!isset($r) || is_null($r) || count($r) < 1) {
+                $roomData = array("name" => $json->room);
+                $r = $this->dbRooms->insert($roomData);
+                $rooms_id = $roomData['_id'];
+            } else {
+                $rooms_id = $r['_id'];
+            }
+
+            $messagesData = array("rooms_id" => $rooms_id, "encrypted" => false, 
+                    "message" => new MongoRegex("/" . preg_quote($json->q, "/") . "/"));
+            $sortData = array("timestamp" => -1);
+            $mr = $this->dbMessages->find($messagesData);
+            $messagesArray = array();
+            while ($mr->hasNext()) {
+                $item = $mr->getNext();
+                $messagesArray[]['item'] = array("message" => $item['message'],
+                        "encrypted" => $item['encrypted']);
+            }
+            var_dump($messagesArray);
+
+            $response['messages'] = $messagesArray;
+            $response['moreMessagesLimit'] = $this->moreMessagesLimit;
+        }
+        $from->send(json_encode($response));
+        */
     }
 
     public function onClose(ConnectionInterface $conn) {

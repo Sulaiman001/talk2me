@@ -81,6 +81,11 @@
             }
             location.reload();
             return;
+        } else if (msg.match(/^\s*(\/search|\/find)/)) {
+            var q = msg.replace(/^\s*(\/search|\/find)\s*(.*?)\s*$/, "$2");
+            var request = {"a": "search", "q": q, "persistent": persistent, "encrypted": usekey};
+            conn.send(JSON.stringify(request));
+            return;
         } else if (msg.match(/^\s*(\/clear|\/refresh)\s*$/)) {
             clearMessages();
             return;
@@ -568,9 +573,15 @@
             if ($("#username").size() < 1) {
                 $("body").append("<input id=\"username\" type=\"hidden\" />");
             }
+            if (persistent && $("#persistent").size() < 1) {
+                $("body").append("<input id=\"persistent\" checked=\"checked\" "
+                        + "type=\"checkbox\" value=\"yes\" "
+                        + "style=\"display:none; visibility:hidden;\" />");
+            }
             init();
             setTimeout(reConnect, 2000);
             $(".more-messages").remove();
+            $(".more-messages-alert").remove();
             $(".messages").children().remove();
         }
     }
