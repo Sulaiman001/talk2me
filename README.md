@@ -13,7 +13,7 @@ Features
 * Secure WebSockets for instant chat
 * Rooms with multiple users
     * Persistent chat room messages stored in MongoDB.
-* Client-side encryption
+* Client-side[1] encryption
 * Status. e.g. Free, Away, Busy, Idle, ...
 * Slash commands similar to IRC. Implement `CommandPlugin` for custom slash commands. e.g. /help
 * User is typing notification.
@@ -163,3 +163,8 @@ You can have any number of command that do just about anything you want. For exa
 will return the current forecast.
 
 You could even implement a whole slew of admin commands. e.g. `/admin <password> broadcast-all '<message to send to all connected clients on server>'`
+
+NOTES
+=====
+
+[1] If you are going to use client-side encryption it is advised to also use SSL. See this article for security risks. <a target="_blank" href="http://matasano.com/articles/javascript-cryptography/">http://matasano.com/articles/javascript-cryptography/</a>.

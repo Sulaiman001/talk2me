@@ -307,7 +307,6 @@ class Chat implements MessageComponentInterface {
 
     public function search($from, $json) {
         print("Not implemented: Search for: {$json->q}\n");
-        /*
         $response = array("status"=>"ok", "a"=>"searchResults");
         if ($this->allowPersistentRooms && $json->persistent && !$json->encrypted) {
             $r = $this->dbRooms->findOne(array("name" => $json->room));
@@ -335,7 +334,6 @@ class Chat implements MessageComponentInterface {
             $response['moreMessagesLimit'] = $this->moreMessagesLimit;
         }
         $from->send(json_encode($response));
-        */
     }
 
     public function onClose(ConnectionInterface $conn) {
