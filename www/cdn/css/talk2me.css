@@ -9,7 +9,7 @@ body, input {
 
 @media(min-width:42em) {
     .container {
-        max-width:42em;
+        max-width:80%;
     }
 }
 
@@ -70,6 +70,7 @@ dl {
 
 code {
     white-space:normal;
+    overflow:auto;
 }
 
 dl {
