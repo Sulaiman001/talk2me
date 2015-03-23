@@ -19,6 +19,7 @@ Features
 * User is typing notification.
 * Growl message for things like: status changes, sign on, sign off, user is typing, ...
 * Message filtered through a basic wiki like engine. e.g. [http://www.example.com] is converted into a clickable hyperlink.
+    * Links parsed using https://github.com/gregjacobs/Autolinker.js
 
 INSTALL
 =======

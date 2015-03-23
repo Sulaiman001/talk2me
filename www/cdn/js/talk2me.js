@@ -16,6 +16,13 @@
     var conn = null;
     var messagesShown = 0;
     var persistentURLBit = "!";
+    var linker = new Autolinker({
+        newWindow: true,
+        stripPrefix: false,
+        email: false,
+        twitter: false,
+        urls: true
+    });
 
     function random(min, max) {
         "use strict";
@@ -278,7 +285,7 @@
 
                             if (v.item.message) {
                                 $(".messages").append("<div class=\"well well-sm message\">" 
-                                        + Wwiki.render(v.item.message) + "</div>");
+                                        + Wwiki.render(linker.link(v.item.message)) + "</div>");
                             }
                         });
                         var s = $(jsonObj.messages).size();
@@ -349,7 +356,7 @@
         if (encrypted) {
             msg = getMessageLockHTML() + " " + msg;
         }
-        $(".messages").prepend("<div class=\"well well-sm message\">" + Wwiki.render(msg) + "</div>");
+        $(".messages").prepend("<div class=\"well well-sm message\">" + Wwiki.render(linker.link(msg)) + "</div>");
     }
 
     function login() {
@@ -707,7 +714,7 @@
                 }
 
                 $(".messages").append("<div class=\"well well-sm message\">" 
-                        + Wwiki.render(v.item.message) + "</div>");
+                        + Wwiki.render(linker.link(v.item.message)) + "</div>");
             });
             var s = $(jsonObj.messages).size();
             messagesShown += s;
