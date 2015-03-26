@@ -16,6 +16,7 @@
     var conn = null;
     var messagesShown = 0;
     var persistentURLBit = "!";
+    var sharedKey = "talk2me chiquita #94011";
     var linker = new Autolinker({
         newWindow: true,
         stripPrefix: false,
@@ -657,19 +658,6 @@
         return String.fromCharCode.apply(null, new Uint16Array(buf));
     }
 
-    /**
-    * http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-    */
-    function str2ab(str) {
-        "use strict";
-        var buf = new ArrayBuffer(str.length * 2);
-        var bufView = new Uint16Array(buf);
-        for (var i=0, strLen=str.length; i<strLen; i++) {
-            bufView[i] = str.charCodeAt(i);
-        }
-        return buf;
-    }
-
     function makeIV() {
         var text = "";
         var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -682,7 +670,9 @@
     function encryptMessage(msg) {
         "use strict";
         try {
-            return ab2str(asmCrypto.AES_CBC.encrypt(msg, secret));
+            return asmCrypto.bytes_to_base64(asmCrypto.AES_CBC
+                    .encrypt(asmCrypto.string_to_bytes(msg), asmCrypto
+                        .PBKDF2_HMAC_SHA256.bytes(secret, sharedKey, 4096, 16)));
         } catch (ex) {
             console.log("Could not encrypt message.");
             return false;
@@ -692,7 +682,9 @@
     function decryptMessage(msg) {
         "use strict";
         try {
-            return ab2str(asmCrypto.AES_CBC.decrypt(msg, secret));
+            return asmCrypto.bytes_to_string(asmCrypto.AES_CBC
+                    .decrypt(asmCrypto.base64_to_bytes(msg), asmCrypto
+                        .PBKDF2_HMAC_SHA256.bytes(secret, sharedKey, 4096, 16)));
         } catch (ex) {
             console.log("Could not decrypt message.");
             return false;
