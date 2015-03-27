@@ -10,14 +10,14 @@ View a demo here (usually a few revisions behind): [https://vimeo.com/94716053](
 Features
 ========
 
-* Secure WebSockets for instant chat
-* Rooms with multiple users
+* Secure WebSockets for instant chat.
+* Rooms with multiple users.
     * Persistent chat room messages stored in MongoDB.
-* Client-side[1] encryption
-* Status. e.g. Free, Away, Busy, Idle, ...
+* Client-side[1] encryption with [https://github.com/vibornoff/asmcrypto.js](asmCrypto).
+* Current status. e.g. Free, Away, Busy, Idle, ...
 * Slash commands similar to IRC. Implement `CommandPlugin` for custom slash commands. e.g. /help
 * User is typing notification.
-* Growl message for things like: status changes, sign on, sign off, user is typing, ...
+* Growl messages for events such as: status changes, sign on, sign off, user is typing, ...
 * Message filtered through a basic wiki like engine. e.g. [http://www.example.com] is converted into a clickable hyperlink.
     * Links parsed using https://github.com/gregjacobs/Autolinker.js
 
