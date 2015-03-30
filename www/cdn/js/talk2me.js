@@ -30,6 +30,18 @@
         return Math.round(Math.random() * (max - min) + min);
     }
 
+    function padRight(str, len) {
+        if (undefined === str || str === null) {
+            return "";
+        } else {
+            var pad = "";
+            for (var i = 0; i < len; i++) {
+                pad += "p";
+            }
+            return str + pad.slice(str.toString().length);
+        }
+    }
+
     Date.prototype.today = function () { 
         return (this.getFullYear()) + "-" 
                 + (((this.getMonth()+1) < 10) ? "0" : "") + (this.getMonth()+1) + "-"
@@ -385,15 +397,16 @@
                 usekey = true;
                 secret = $("#secret").val();
                 var l = secret.length;
-                if (l !== 32) {
+                if (l < 16 || l > 32) {
                     removeErrorMessages();
                     $("#login-form").prepend("<div id=\"error\"></div>");
                     $("#error").addClass("alert alert-warning fade in")
                             .append("<button id=\"close\">&times;</button>");
                     $("#close").addClass("close").attr({"type":"button", "data-dismiss":"alert"})
-                            .after("Secret key for client-side encryption must be 32 characters.");
+                            .after("Secret key for client-side encryption must be between 16 and 32 characters.");
                     return false;
                 }
+                secret = padRight(secret, 32);
             } else {
                 usekey = false;
                 secret = "";
@@ -774,12 +787,12 @@
 
         $("#secret").on("keyup", function() {
             var l = $("#secret").val().length;
-            if (l === 32) {
+            if (l >= 16 && l <= 32) {
                 $("#key-length").css("color", "green");
                 $("#key-length").html("Valid key");
             } else {
                 $("#key-length").css("color", "red");
-                $("#key-length").html(l + " characters of 32");
+                $("#key-length").html(l + " characters");
             }
         });
 
