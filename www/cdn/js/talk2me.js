@@ -259,7 +259,7 @@
 
                         // Only play sounds for these types of messages.
                         var notif = new Audio("cdn/sounds/" + notifMessage);
-                        notif.volume = 0.5;
+                        notif.volume = soundVolume;
                         notif.play();
 
                         // Append message to page
