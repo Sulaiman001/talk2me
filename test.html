@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Skeleton</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="shortcut icon" href="favicon.ico" />
+    </head>
+    <body>
+        <div class="container">
+        </div>
+        <script src="www/cdn/js/jquery/1.10.2/jquery-1.10.2.min.js"></script>
+        <script src="www/cdn/js/asmcrypto.min.js"></script>
+        <script type="text/javascript">
+            function ab2str(buf) {
+                "use strict";
+                return String.fromCharCode.apply(null, new Uint16Array(buf));
+            }
+
+            function padRight(str, len) {
+                if (undefined === str || str === null) {
+                    return "";
+                } else {
+                    var pad = "";
+                    for (var i = 0; i < len; i++) {
+                        pad += "p";
+                    }
+                    return str + pad.slice(str.toString().length);
+                }
+            }
+
+            $(document).ready(function() {
+                var str = "This will be encrypted.";
+                console.log("padded str: " + padRight(str, 32));
+                console.log("    plain: " + str);
+                var key = "abcdefghabcdefghabcdefghabcdefgh";
+                var str_enc = ab2str(asmCrypto.AES_CBC.encrypt(str, key));
+                console.log("encrypted: " + str_enc);
+                var str_dec = ab2str(asmCrypto.AES_CBC.decrypt(str_enc, key));
+                console.log("decrypted: " + str_dec);
+
+                console.log("--------------------------------");
+
+                var sharedkey = "talke2me";
+                var buftext = asmCrypto.string_to_bytes(str);
+                var bufkey = asmCrypto.PBKDF2_HMAC_SHA256.bytes(key, sharedkey, 4096, 16);
+                var ciphertext = asmCrypto.AES_CBC.encrypt(buftext, bufkey);
+                var cipherbase64 = asmCrypto.bytes_to_base64(ciphertext);
+
+                console.log("encrypted: " + cipherbase64);
+                var enctext = asmCrypto.base64_to_bytes(cipherbase64);
+                bufkey = asmCrypto.PBKDF2_HMAC_SHA256.bytes(key, sharedkey, 4096, 16);
+                var ciphertext_dec = asmCrypto.AES_CBC.decrypt(enctext, bufkey);
+                var buftext_dec = asmCrypto.bytes_to_string(ciphertext_dec);
+                console.log("decrypted: " + buftext_dec);
+            });
+        </script>
+    </body>
+</html>

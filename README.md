@@ -169,3 +169,4 @@ NOTES
 =====
 
 [1] If you are going to use client-side encryption it is advised to also use SSL. See this article for security risks. <a target="_blank" href="http://matasano.com/articles/javascript-cryptography/">http://matasano.com/articles/javascript-cryptography/</a>.
+
